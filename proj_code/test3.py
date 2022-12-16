@@ -5,8 +5,10 @@ import urllib.parse
 
 
 def isFeedLink(link):
-    myList = ['/rss', '/feed', '/xml']
+    myList = ['/rss.cms', '/feed/', '/xml', 'feeds/posts/default', '.rss']
     if any(x in link for x in myList):
+        return True
+    elif link[-5:] == '/feed':
         return True
     else:
         return False
@@ -19,6 +21,9 @@ def find_feed(site):
     # result = []
     possible_feeds = []
     html = BeautifulSoup(page, 'html.parser')
+    if site[-1] == '/':
+        site = site[:-1]
+        print("------", site)
 
     for anchor in html.find_all('a'):
         # print(anchor.get('href', '/'))
@@ -26,29 +31,38 @@ def find_feed(site):
         # print("current urls = ", feed_urls)
         if len(feed_urls) > 1:
             flag = isFeedLink(feed_urls)
-            print(flag)
-            if flag == True :
-                print("Found a match")
-                possible_feeds.append(feed_urls)
+            if flag == True:
+                if site in feed_urls:
+                    possible_feeds.append(feed_urls)
+                else:
+                    feed_urls = site + feed_urls
+                    possible_feeds.append(feed_urls)
     return possible_feeds
-    # parsed_url = urllib.parse.urlparse(site)
-    # base = parsed_url.scheme+"://"+parsed_url.hostname
-    # atags = html.findAll("a")
-    # for a in atags:
-    #     href = a.get("href", None)
-    #     if href:
-    #         if "xml" in href or "rss" in href or "feed" in href:
-    #             possible_feeds.append(base+href)
-    # for url in list(set(possible_feeds)):
-    #     f = feedparser.parse(url)
-    #     if len(f.entries) > 0:
-    #         if url not in result:
-    #             result.append(url)
-    # return(result)
-    #
 
-# driver code
+# driver code Note : Don't give Backward slash at the end of a site
 site1 = 'https://timesofindia.indiatimes.com/'
-result = find_feed(site1)
+site2 = 'https://www.business-standard.com/'
+site3 = 'https://www.business-standard.com/rss-feeds/listing/'
+result = find_feed(site3)
+print("Total Feeds: ", len(result))
 print(result)
+
+# vgm_url = 'https://www.business-standard.com/rss/home_page_top_stories.rss'
+vgm_url = result[0]
+html_text = requests.get(vgm_url).text
+soup = BeautifulSoup(html_text, features="xml")
+items = soup.findAll('item')
+print(items)
+# if items == []:
+#     next_res = find_feed(vgm_url)
+#
+# print("Total Feeds: ", len(next_res))
+# print(set(next_res))
+
+
+# news_item = {}
+# news_item['RSS_Feed'] = vgm_url
+# news_item['Title'] = items[0].title.text
+# news_item['Description'] = items[0].description.text
+# print(news_item)
 
