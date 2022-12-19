@@ -47,12 +47,12 @@ result = find_feed(site3)
 print("Total Feeds: ", len(result))
 print(result)
 
-# vgm_url = 'https://www.business-standard.com/rss/home_page_top_stories.rss'
-vgm_url = result[0]
-html_text = requests.get(vgm_url).text
-soup = BeautifulSoup(html_text, features="xml")
-items = soup.findAll('item')
-print(items)
+# # vgm_url = 'https://www.business-standard.com/rss/home_page_top_stories.rss'
+# vgm_url = result[0]
+# html_text = requests.get(vgm_url).text
+# soup = BeautifulSoup(html_text, features="xml")
+# items = soup.findAll('item')
+# print(items)
 # if items == []:
 #     next_res = find_feed(vgm_url)
 #
@@ -65,4 +65,3 @@ print(items)
 # news_item['Title'] = items[0].title.text
 # news_item['Description'] = items[0].description.text
 # print(news_item)
-
