@@ -12,7 +12,6 @@ import pandas as pd
 from datetime import datetime, time
 from sqlalchemy import create_engine
 
-
 # Function to create Database connection
 def create_db_connection():
     # create connection string = 'postgresql://<user>:<password>@<host>:<port>/<db>'
@@ -25,6 +24,7 @@ def create_db_connection():
 
 # Function to read Table2
 def read_table2():
+    print("-----------------------Reading Table2 ---------------------")
     with engine.connect() as connection:  # using "with" don't require closing of connection
         # query to read on condition
         read_query = 'SELECT "RSS_Feed" FROM "public"."table2" WHERE "Active_flag" = 2 LIMIT 1'
@@ -32,15 +32,19 @@ def read_table2():
         print(result_set)  # gives "sqlalchemy.engine.cursor.LegacyCursorResult object"
         for res in result_set:
             link = list(res)  # the RSS_Feed is saved in a list
-    print("............Reading table2 Done.........")
+    print("-----------------------Reading table2 Successful------------------")
     return link
 
 
 # Function to write into table3
 def write_to_table2_3(df, link):
+    print("------------------- Writing into table3 -----------------------")
     with engine.connect() as connection:  # using "with" don't require closing of connection
         # query to write into table
         df.to_sql('table3', con=connection, if_exists='replace', index=False)  # write a DF into table3
+
+        print("------------------- Writing into table2 -----------------------")
+
         write_query = 'UPDATE "public"."table2" SET "Active_flag" = 0 WHERE "RSS_Feed" = ' + "'" + link + "'"
         connection.execute(write_query)  # change flag in table2
         print("-----------Updated table2 and table3------------")
@@ -54,6 +58,7 @@ def get_sentiment(my_txt):
     # lang_code = lang_response['Languages'][0]['LanguageCode']
 
     # get the sentiment by calling detect_sentiment() API
+    # print("------------------Getting Sentiment----------------------")
     senti_response = client.detect_sentiment(
         Text=my_txt,
         LanguageCode='en'  # lang_code

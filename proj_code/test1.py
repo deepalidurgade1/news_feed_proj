@@ -31,7 +31,7 @@ print(dt)
 feed_links = []
 news_items = []
 result_df = pd.DataFrame(news_items, columns=['RSS_Feed', 'Title', 'Description', 'Body', 'RSS_Feed_URL',
-                                              'Publish_date', 'Sentiment', 'Inserted_on'])
+                                              'Publish_date', 'Inserted_time_stamp', 'Sentiment'])
 url = 'https://timesofindia.indiatimes.com/rss.cms'
 r1 = requests.get(url)                                     # Request
 print(r1.status_code)
@@ -61,19 +61,16 @@ for i in range(len(feed_links)):
         news_item['RSS_Feed'] = vgm_url
         news_item['Title'] = x.title.text
         news_item['Description'] = x.description.text
-        news_item['Body'] = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum 
-            has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of 
-            type and scrambled it to make a type specimen book. """
+        news_item['Body'] = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum"""
         news_item['RSS_Feed_URL'] = x.link.text
         news_item['Publish_date'] = x.pubDate.text
+        news_item['Inserted_time_stamp'] = datetime.now()
         news_item['Sentiment'] = "Happy"
-        news_item['Inserted_on'] = datetime.now()
-
         news_items.append(news_item)
 
     # print(news_items)
     df = pd.DataFrame(news_items, columns=['RSS_Feed', 'Title', 'Description', 'Body', 'RSS_Feed_URL', 'Publish_date',
-                                           'Sentiment', 'Inserted_on'])
+                                           'Inserted_time_stamp', 'Sentiment'])
 
     # df.head()
     result_df = result_df.append(df)
