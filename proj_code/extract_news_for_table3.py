@@ -6,11 +6,12 @@
 #             4) Save the extracted content as DF and write it into table3
 
 import boto3
-import requests
+from requests import get
 from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime, time
 from sqlalchemy import create_engine
+from goose3 import Goose
 
 # Function to create Database connection
 def create_db_connection():
@@ -31,7 +32,7 @@ def read_table2():
         result_set = connection.execute(read_query)
         print(result_set)  # gives "sqlalchemy.engine.cursor.LegacyCursorResult object"
         for res in result_set:
-            link = list(res)  # the RSS_Feed is saved in a list
+            link = res[0]                # the RSS_Feed is taken from tuple & saved in a variable
     print("-----------------------Reading table2 Successful------------------")
     return link
 
@@ -51,26 +52,51 @@ def write_to_table2_3(df, link):
     return
 
 
+# Function to get news body from given news_url
+def extract_news_body(news_url):
+    response = get(news_url)
+    extractor = Goose()
+    article = extractor.extract(raw_html=response.content)
+    body = article.cleaned_text
+    # print(body)
+    return body
+
+
 # Function to get sentiment from given text
 def get_sentiment(my_txt):
-    # Extract the language code of given text by calling detect_dominant_language() API
-    # lang_response = client.detect_dominant_language(Text=my_txt)
-    # lang_code = lang_response['Languages'][0]['LanguageCode']
+    # get the sentiment by calling detect_sentiment()  from AWS Comprehend Service
+    # For AWS Comprehend Service, the maximum document size for sentiment analysis, targeted sentiment analysis,
+    # syntax analysis, and the batch synchronous operations is 5 KB.
+    text = my_txt
+    new_senti_str = ""
+    if len(text) < 2000:
+        response = client.detect_sentiment(Text=text, LanguageCode='en')                              #Lang_Code
+        final_sentiment = response['Sentiment']
+        return final_sentiment
 
-    # get the sentiment by calling detect_sentiment() API
-    # print("------------------Getting Sentiment----------------------")
-    senti_response = client.detect_sentiment(
-        Text=my_txt,
-        LanguageCode='en'  # lang_code
-    )
-    return senti_response['Sentiment']
+    else:
+        while len(text) >= 2000:
+            response = client.detect_sentiment(Text=text[:2000], LanguageCode='en')
+            new_senti_str += " " + response['Sentiment']
+            text = text[2000:]              # take next chunk of text from 1000 onwards
+
+        # Process the last chunk of text which is less than 1000
+        response = client.detect_sentiment(Text=text, LanguageCode='en')
+        new_senti_str += " " + response['Sentiment']
+
+        # Process the  new_senti_str for getting final sentiment
+        response = client.detect_sentiment(Text=new_senti_str, LanguageCode='en')
+        final_sentiment = response['Sentiment']
+        return final_sentiment
 
 
 # Function to Parse the RSS_feed page
 def get_news_details(RSS_feed_url):
     print("Received URL: ", RSS_feed_url)
+    print("------Extracting details from it------")
     news_items = []
-    html_text = requests.get(RSS_feed_url).text
+    cols = ['RSS_Feed', 'Title', 'Description', 'Body', 'RSS_Feed_URL', 'Publish_date', 'Sentiment', 'Inserted_on']
+    html_text = get(RSS_feed_url).text
     soup = BeautifulSoup(html_text, features="xml")
     items = soup.findAll('item')
 
@@ -80,19 +106,17 @@ def get_news_details(RSS_feed_url):
         news_item['RSS_Feed'] = RSS_feed_url
         news_item['Title'] = x.title.text
         news_item['Description'] = x.description.text
-        news_item['Body'] = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
-            has been the industry's standard dummy text ever since tshe 1500s, when an unknown printer took a galley of
-            type and scrambled it to make a type specimen book. """
+        news_body = extract_news_body(x.link.text)
+        news_item['Body'] = news_body
         news_item['RSS_Feed_URL'] = x.link.text
         news_item['Publish_date'] = x.pubDate.text
-        news_item['Sentiment'] = get_sentiment(x.title.text)
+        news_item['Sentiment'] = get_sentiment(news_body)
         news_item['Inserted_on'] = datetime.now()
 
         news_items.append(news_item)
 
     # print(news_items)
-    df2 = pd.DataFrame(news_items, columns=['RSS_Feed', 'Title', 'Description', 'Body', 'RSS_Feed_URL', 'Publish_date',
-                                            'Sentiment', 'Inserted_on'])
+    df2 = pd.DataFrame(news_items, columns=cols)
     tbl3_df = df2.drop_duplicates()
     return tbl3_df
 
@@ -108,12 +132,13 @@ engine = create_db_connection()
 # while 1:
 # 1) Read table2 single row to get feed_url
 feed_link = read_table2()
+print(feed_link)
 
 # 2) extract news from feed_url
-tbl3_df = get_news_details(feed_link[0])
+tbl3_df = get_news_details(feed_link)
 
 # 3) write the news Dataframe to table3 and make active_flag = 0 in table 2
-write_to_table2_3(tbl3_df, feed_link[0])
+write_to_table2_3(tbl3_df, feed_link)
 
 engine.dispose()
 # time.sleep(900)                                # wait for 15 min = 900 sec
