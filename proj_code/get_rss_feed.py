@@ -36,7 +36,6 @@ def write_to_table2(df):
         # query to write into table
         df.to_sql('table2', con=connection, if_exists='replace', index=False)              # write a DF into table
     print("--------------Writing into Table2 successful---------------")
-    return
 
 # function to get RSS Feed URLs for given website
 def get_rss_feed(news_url):
@@ -86,7 +85,6 @@ def get_rss_feed(news_url):
         print(len(tbl2_df))
 
     return tbl2_df
-
 
 # Driver Program
 # 1) Read table1 to get news url whose active_flag = 1

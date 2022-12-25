@@ -37,7 +37,6 @@ def read_table2():
     print("-----------------------Reading table2 Successful------------------")
     return link
 
-
 # Function to write into table3
 def write_to_table2_3(df, link):
     print("------------------- Writing into table3 -----------------------")

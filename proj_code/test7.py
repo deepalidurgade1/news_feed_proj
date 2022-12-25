@@ -38,9 +38,9 @@ class NewGeeks:
     # class with no constructor
 
     # a method for printing data members
-    def print_str(s):
+    def print_str(self):
         print("In class 'NewGeeks'")
-        print(s)
+        print(self)
 
 
 class FetchUrl:
@@ -54,3 +54,4 @@ class FetchUrl:
         print("Fetching Requested URL...........")
         r1 = requests.get(self.url)  # Request
         print("Status Code: ", r1.status_code)
+
